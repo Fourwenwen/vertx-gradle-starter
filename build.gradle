@@ -1,0 +1,92 @@
+group 'com.fourwenwen.vertx'
+version '1.0-SNAPSHOT'
+
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "com.github.jengelman.gradle.plugins:shadow:2.0.2"
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'com.github.johnrengelman.shadow'
+
+repositories {
+    maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
+}
+
+repositories {
+    mavenCentral()
+}
+
+compileJava {
+    targetCompatibility = 1.8
+    sourceCompatibility = 1.8
+    dependsOn annotationProcessing
+}
+
+dependencies {
+    /* vertx 用于Web处理和呈现的 */
+    compile group: 'io.vertx', name: 'vertx-web', version: '3.5.0'
+    compile group: 'io.vertx', name: 'vertx-web-templ-freemarker', version: '3.5.0'
+    compile group: 'io.vertx', name: 'vertx-service-proxy', version: '3.5.0'
+    compileOnly 'io.vertx:vertx-codegen:3.5.0'
+    /* markdown转html */
+    compile group: 'com.github.rjeschke', name: 'txtmark', version: '0.13'
+    /* vertx JDBC数据库访问*/
+    compile group: 'io.vertx', name: 'vertx-jdbc-client', version: '3.5.0'
+    compile group: 'org.hsqldb', name: 'hsqldb', version: '2.4.0'
+    /* 日志 */
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+    compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+    /* test */
+    testCompile group: 'io.vertx', name: 'vertx-unit', version: '3.5.0'
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+mainClassName = 'io.vertx.core.Launcher' //<--add
+def mainVerticleName = 'com.fourwenwen.vertx.wiki.MainVerticle'//<--add
+
+shadowJar {
+    classifier = 'fat'
+    manifest {  //<--add
+        attributes "Main-Verticle": mainVerticleName
+    }
+    mergeServiceFiles {
+        include 'META-INF/services/io.vertx.core.spi.VerticleFactory'
+    }
+}
+
+
+task annotationProcessing(type: JavaCompile, group: 'build') {
+    source = sourceSets.main.java
+    classpath = configurations.compile + configurations.compileOnly
+    destinationDir = project.file('src/main/generated')
+    options.compilerArgs = [
+            "-proc:only",
+            "-processor", "io.vertx.codegen.CodeGenProcessor",
+            "-AoutputDirectory=${destinationDir.absolutePath}"
+    ]
+}
+
+task cleanPlugin(type: clean) {
+    destinationDir = project.file('src/main/generated')
+    delete "src/main/generated'"
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs += 'src/main/generated'
+        }
+    }
+}
