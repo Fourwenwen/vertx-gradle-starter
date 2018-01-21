@@ -24,11 +24,8 @@ repositories {
     mavenCentral()
 }
 
-compileJava {
-    targetCompatibility = 1.8
-    sourceCompatibility = 1.8
-    dependsOn annotationProcessing
-}
+targetCompatibility = 1.8
+sourceCompatibility = 1.8
 
 dependencies {
     /* vertx 用于Web处理和呈现的 */
@@ -66,21 +63,26 @@ shadowJar {
     }
 }
 
+task cleanPlugin(type: clean) {
+    destinationDir = project.file('src/main/generated')
+    delete "src/main/generated'"
+}
 
-task annotationProcessing(type: JavaCompile, group: 'build') {
+task annotationProcessing(type: JavaCompile, group: 'build') { // codegen
     source = sourceSets.main.java
     classpath = configurations.compile + configurations.compileOnly
     destinationDir = project.file('src/main/generated')
     options.compilerArgs = [
             "-proc:only",
             "-processor", "io.vertx.codegen.CodeGenProcessor",
-            "-AoutputDirectory=${destinationDir.absolutePath}"
+            "-AoutputDirectory=${project.projectDir}/src/main"
     ]
 }
 
-task cleanPlugin(type: clean) {
-    destinationDir = project.file('src/main/generated')
-    delete "src/main/generated'"
+compileJava {
+    targetCompatibility = 1.8
+    sourceCompatibility = 1.8
+    dependsOn annotationProcessing
 }
 
 sourceSets {
