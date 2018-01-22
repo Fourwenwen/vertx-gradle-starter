@@ -6,9 +6,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -72,9 +70,8 @@ public class HttpServerVerticle extends AbstractVerticle {
     private void indexHandler(RoutingContext context) {
         dbService.fetchAllPages(reply -> {
             if (reply.succeeded()) {
-                JsonObject body = (JsonObject) reply.result().body();
                 context.put("title", "Wiki home");
-                context.put("pages", body.getJsonArray("pages").getList());
+                context.put("pages", reply.result().getList());
                 templateEngine.render(context, "templates", "/index.ftl", ar -> {
                     if (ar.succeeded()) {
                         context.response().putHeader("Content-Type", "text/html");
